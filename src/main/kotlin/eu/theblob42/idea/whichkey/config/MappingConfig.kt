@@ -7,6 +7,7 @@ import com.maddyhome.idea.vim.command.MappingMode
 import com.maddyhome.idea.vim.key.*
 import com.maddyhome.idea.vim.vimscript.model.datatypes.VimString
 import eu.theblob42.idea.whichkey.model.Mapping
+import eu.theblob42.idea.whichkey.provider.Description
 import eu.theblob42.idea.whichkey.provider.descriptions.CombinedDescriptionProvider
 import eu.theblob42.idea.whichkey.provider.descriptions.DefaultDescriptionProvider
 import eu.theblob42.idea.whichkey.provider.descriptions.DictionaryDescriptionProvider
@@ -58,8 +59,8 @@ object MappingConfig {
      */
     fun getNestedMappings(mode: MappingMode, keyStrokes: List<KeyStroke>): List<Pair<String, Mapping>> {
         val whichKeyDescriptions = descriptionProvider.getDescriptions(keyStrokes)
-        fun getDescription(keyStroke: KeyStroke): String? {
-            return whichKeyDescriptions.find { it.keyStroke == keyStroke }?.description
+        fun getDescription(keyStroke: KeyStroke): Description? {
+            return whichKeyDescriptions.find { it.keyStroke == keyStroke }
         }
 
         val mappings =
@@ -68,9 +69,12 @@ object MappingConfig {
                     UserMappingProvider.getMappings(mode, keyStrokes)
 
         return mappings.associate {
+            val info = getDescription(it.keyStroke)
+            val description = info?.description ?: it.defaultDescription ?: injector.parser.toKeyNotation(it.keyStroke)
             keyToString(it.keyStroke) to Mapping(
                 it.isPrefix,
-                getDescription(it.keyStroke) ?: it.defaultDescription ?: injector.parser.toKeyNotation(it.keyStroke)
+                description,
+                info?.icon
             )
         }.toList()
     }

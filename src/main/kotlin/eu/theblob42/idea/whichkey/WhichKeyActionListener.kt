@@ -12,7 +12,7 @@ import com.maddyhome.idea.vim.impl.state.toMappingMode
 import com.maddyhome.idea.vim.newapi.vim
 import com.maddyhome.idea.vim.options.OptionAccessScope
 import eu.theblob42.idea.whichkey.config.MappingConfig
-import eu.theblob42.idea.whichkey.config.PopupConfig
+import eu.theblob42.idea.whichkey.config.PopupConfigCode
 import eu.theblob42.idea.whichkey.model.Mapping
 import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
@@ -25,7 +25,7 @@ class WhichKeyActionListener : AnActionListener {
         actions: MutableList<AnAction>,
         dataContext: DataContext
     ) {
-        PopupConfig.hidePopup()
+        PopupConfigCode.hidePopup()
         if (shortcut !is KeyboardShortcut) {
             return
         }
@@ -59,7 +59,7 @@ class WhichKeyActionListener : AnActionListener {
     }
 
     override fun afterEditorTyping(charTyped: Char, dataContext: DataContext) {
-        PopupConfig.hidePopup()
+        PopupConfigCode.hidePopup()
         val editor = dataContext.getData(CommonDataKeys.EDITOR) ?: return
 
         val commandState = CommandState.getInstance(editor)
@@ -86,7 +86,7 @@ class WhichKeyActionListener : AnActionListener {
                 ignoreNextExecute = true
             }
         } else {
-            PopupConfig.showPopup(window!!, typedKeySequence, nestedMappings, startTime)
+            PopupConfigCode.showPopup(editor, typedKeySequence, nestedMappings, startTime)
         }
     }
 

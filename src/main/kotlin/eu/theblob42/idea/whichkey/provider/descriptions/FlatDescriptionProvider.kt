@@ -17,7 +17,7 @@ class FlatDescriptionProvider(private val prefix: String = "WhichKeyDesc") : Des
                 DESCRIPTION_REGEX.find(it)?.groupValues?.let { (_, keySequence, description) ->
                     val keys = injector.parser.parseKeys(keySequence)
                     if (keys.size - path.size == 1 && keys.zip(path).all { (a, b) -> a == b }) {
-                        Description(keys.asReversed().first(), description)
+                        Description(keys.asReversed().first(), description, null)
                     } else {
                         null
                     }

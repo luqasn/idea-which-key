@@ -39,9 +39,14 @@ class DictionaryDescriptionProvider(private val variableName: String) : Descript
         return nodeDescriptions.dictionary.entries.mapNotNull { entry ->
             val key = injector.parser.parseKeys(entry.key.value).first()
             when (val value = entry.value) {
-                is VimDictionary -> Description(key, null)
-                is VimList -> Description(key, value.values.firstOrNull()?.asString())
-                is VimString -> Description(key, value.value)
+                is VimDictionary -> Description(key, null, null)
+                is VimList -> when (value.values.size) {
+                    2 -> Description(key, value.values[0].asString(), null)
+                    3 -> Description(key, value.values[0].asString(), value.values[1].asString())
+                    else -> Description(key, null, null)
+                }
+
+                is VimString -> Description(key, value.value, null)
                 else -> null
             }
         }
