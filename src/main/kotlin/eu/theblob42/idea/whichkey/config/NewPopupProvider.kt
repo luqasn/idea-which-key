@@ -11,9 +11,11 @@ import java.awt.*
 import javax.swing.*
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.ui.popup.*
+import com.intellij.util.ui.UIUtil
 import eu.theblob42.idea.whichkey.model.Mappings
 import eu.theblob42.idea.whichkey.provider.PopupProvider
 import java.awt.event.KeyEvent
+import kotlin.math.ceil
 
 val WHICHKEY_MAPPING_BINDING =
     TextAttributesKey.createTextAttributesKey("WHICHKEY_MAPPING_BINDING", DefaultLanguageHighlighterColors.NUMBER)
@@ -37,7 +39,14 @@ class NewPopupProvider: PopupProvider {
         currentPopup = null
     }
 
-    private fun show(editor: Editor, text: TextWithHighlights) {
+    private fun show(editor: Editor, items: List<Item>) {
+        val style = Style.RIGHT
+        val rowWidth = 40
+        val containerWidth = if (style == Style.RIGHT) rowWidth else editor.calculateSizeInCharacters()?.width ?: 50
+
+        val text = PopupLayout.layoutItems(
+            40, containerWidth, WhichKeyConfig(), items
+        )
         val editorFactory: EditorFactory = EditorFactory.getInstance()
         val document = editorFactory.createDocument(text.text)
         val editor2: Editor = editorFactory.createViewer(document)
@@ -66,6 +75,13 @@ class NewPopupProvider: PopupProvider {
 
         val contentSize = editor.component.visibleRect.size
         val popupHeight = lines.size * editor.lineHeight
+
+
+        val preferredSize = when(style){
+            Style.BOTTOM -> Dimension(contentSize.width, popupHeight)
+            Style.RIGHT -> Dimension(rowWidth * ceil(editor.getCharSize().width).toInt(), popupHeight)
+        }
+
         val component = object : JComponent() {
             init {
                 layout = BorderLayout()
@@ -74,7 +90,7 @@ class NewPopupProvider: PopupProvider {
                     verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_NEVER
                     horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
                 }
-                scrollPane.preferredSize = Dimension(contentSize.width, popupHeight)
+                scrollPane.preferredSize = preferredSize
                 add(scrollPane, BorderLayout.CENTER)
             }
         }
@@ -99,7 +115,15 @@ class NewPopupProvider: PopupProvider {
 //                }
 //            })
             .createPopup()
-        popup.show(RelativePoint(editor.component, Point(0, contentSize.height - popupHeight)))
+        when(style) {
+            Style.BOTTOM ->
+                popup.show(RelativePoint(editor.component, Point(0, contentSize.height - popupHeight)))
+
+            Style.RIGHT -> {
+                val scrollbarPadding = UIUtil.getScrollBarWidth()
+                popup.show(RelativePoint(editor.component, Point(contentSize.width-preferredSize.width - scrollbarPadding, contentSize.height - popupHeight - scrollbarPadding)))
+            }
+        }
         currentPopup = popup
     }
 
@@ -151,10 +175,11 @@ class NewPopupProvider: PopupProvider {
                 it.second.prefix
             )
         }
-        val text = PopupLayout.layoutItems(
-            40, editor.calculateSizeInCharacters()?.width ?: 50, WhichKeyConfig(), items
-        )
-        show(editor, text)
-        return
+
+        show(editor, items)
+    }
+    enum class Style {
+        BOTTOM,
+        RIGHT
     }
 }
