@@ -7,7 +7,6 @@ import com.intellij.openapi.editor.actionSystem.ActionPlan
 import com.intellij.openapi.editor.actionSystem.TypedAction
 import com.intellij.openapi.editor.actionSystem.TypedActionHandler
 import com.intellij.openapi.editor.actionSystem.TypedActionHandlerEx
-import com.intellij.openapi.wm.WindowManager
 import com.maddyhome.idea.vim.KeyHandler
 import com.maddyhome.idea.vim.api.VimEditor
 import com.maddyhome.idea.vim.api.injector
@@ -18,9 +17,10 @@ import com.maddyhome.idea.vim.helper.EditorHelper
 import com.maddyhome.idea.vim.impl.state.toMappingMode
 import com.maddyhome.idea.vim.newapi.vim
 import com.maddyhome.idea.vim.options.OptionAccessScope
+import eu.theblob42.idea.whichkey.config.DefaultPopupProvider
 import eu.theblob42.idea.whichkey.config.MappingConfig
-import eu.theblob42.idea.whichkey.config.PopupConfig
 import eu.theblob42.idea.whichkey.model.Mapping
+import eu.theblob42.idea.whichkey.provider.DebouncingPopupProvider
 import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
 
@@ -37,6 +37,7 @@ class BlockNextTypedActionHandler(private val originalHandler: TypedActionHandle
 }
 
 class WhichKeyActionListener : AnActionListener {
+    private val popupProvider = DebouncingPopupProvider(DefaultPopupProvider())
     private var blockNextAction: Boolean = false
 
     override fun afterActionPerformed(action: AnAction, event: AnActionEvent, result: AnActionResult) {
@@ -59,7 +60,7 @@ class WhichKeyActionListener : AnActionListener {
         actions: MutableList<AnAction>,
         dataContext: DataContext
     ) {
-        PopupConfig.hidePopup()
+        popupProvider.hidePopup()
         if (shortcut !is KeyboardShortcut) {
             return
         }
@@ -93,8 +94,7 @@ class WhichKeyActionListener : AnActionListener {
     }
 
     override fun beforeEditorTyping(charTyped: Char, dataContext: DataContext) {
-        PopupConfig.hidePopup()
-
+        popupProvider.hidePopup()
         val editor = dataContext.getData(CommonDataKeys.EDITOR) ?: return
         if (!EditorHelper.isFileEditor(editor)) {
             return
@@ -120,7 +120,6 @@ class WhichKeyActionListener : AnActionListener {
         val mappingMode = vimEditor.mode.toMappingMode()
         val mappingState = KeyHandler.getInstance().keyHandlerState.mappingState
         val nestedMappings = getMappingsToDisplay(editor, typedKeySequence)
-        val window = WindowManager.getInstance().getFrame(editor.project)
 
         if (nestedMappings.isEmpty()) {
             // insert mode "inserts" unmapped chars which we don't want to block
@@ -138,7 +137,7 @@ class WhichKeyActionListener : AnActionListener {
                 return blockNextKeyPress(isShortcut, vimEditor, mappingState)
             }
         } else {
-            PopupConfig.showPopup(window!!, typedKeySequence, nestedMappings, startTime)
+            popupProvider.showPopup(editor, typedKeySequence, nestedMappings, startTime)
         }
     }
 
