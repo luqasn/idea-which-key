@@ -22,7 +22,7 @@ class DefaultPopupProvider : PopupProvider {
     private var currentBalloon: Balloon? = null
 
     /**
-     * Either cancel the display job or hide the current popup
+     * Hide the current popup
      */
     override fun hidePopup() {
         // hide Balloon if present and reset value
@@ -43,7 +43,7 @@ class DefaultPopupProvider : PopupProvider {
      * @param nestedMappings A [List] of nested mappings to display
      * @param startTime Timestamp to consider for the calculation of the popup delay
      */
-    override fun showPopup(editor: Editor, typedKeys: List<KeyStroke>, nestedMappings: List<Pair<String, Mapping>>) {
+    override fun showPopup(editor: Editor, typedKeys: List<KeyStroke>, nestedMappings: List<Pair<String, Mapping>>, startTime: Long) {
         if (nestedMappings.isEmpty()) {
             return
         }

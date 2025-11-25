@@ -18,9 +18,8 @@ import com.maddyhome.idea.vim.impl.state.toMappingMode
 import com.maddyhome.idea.vim.newapi.vim
 import com.maddyhome.idea.vim.options.OptionAccessScope
 import eu.theblob42.idea.whichkey.config.MappingConfig
-import eu.theblob42.idea.whichkey.config.NewPopupProvider
 import eu.theblob42.idea.whichkey.model.Mapping
-import eu.theblob42.idea.whichkey.provider.DebouncingPopupProvider
+import eu.theblob42.idea.whichkey.provider.ConfigurablePopupProvider
 import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
 
@@ -37,7 +36,7 @@ class BlockNextTypedActionHandler(private val originalHandler: TypedActionHandle
 }
 
 class WhichKeyActionListener : AnActionListener {
-    private val popupProvider = DebouncingPopupProvider(NewPopupProvider())
+    private val popupProvider = ConfigurablePopupProvider()
     private var blockNextAction: Boolean = false
 
     override fun afterActionPerformed(action: AnAction, event: AnActionEvent, result: AnActionResult) {

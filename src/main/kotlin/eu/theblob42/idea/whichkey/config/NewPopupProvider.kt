@@ -12,6 +12,7 @@ import javax.swing.*
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.ui.popup.*
 import com.intellij.util.ui.UIUtil
+import com.maddyhome.idea.vim.vimscript.model.datatypes.VimString
 import eu.theblob42.idea.whichkey.model.Mappings
 import eu.theblob42.idea.whichkey.provider.PopupProvider
 import java.awt.event.KeyEvent
@@ -33,14 +34,22 @@ val WHICHKEY_MAPPING_DESCRIPTION_GROUP = TextAttributesKey.createTextAttributesK
 )
 
 class NewPopupProvider: PopupProvider {
+    companion object {
+        const val name = "new"
+    }
     private var currentPopup: JBPopup? = null
     override fun hidePopup() {
         currentPopup?.cancel()
         currentPopup = null
     }
 
+    private val style: Style
+        get() = when (val popupType = injector.variableService.getGlobalVariableValue("WhichKey_PopupStyle")) {
+        !is VimString -> Style.BOTTOM
+        else -> Style.entries.firstOrNull { it.name.compareTo(popupType.value, true) == 0 } ?: Style.BOTTOM
+    }
+
     private fun show(editor: Editor, items: List<Item>) {
-        val style = Style.RIGHT
         val rowWidth = 40
         val containerWidth = if (style == Style.RIGHT) rowWidth else editor.calculateSizeInCharacters()?.width ?: 50
 
