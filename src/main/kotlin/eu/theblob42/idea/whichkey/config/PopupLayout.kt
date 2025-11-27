@@ -123,7 +123,7 @@ object PopupLayout {
 
 //    val rows = t.layout(LayoutParams(width = boxWidth - config.layout.spacing))
 
-        repeat(config.padding.first) {
+        repeat(config.padding.vertical) {
             text.append("\n")
         }
         fun appendWithHighlight(str: String, highlight: TextAttributesKey) {
@@ -143,7 +143,7 @@ object PopupLayout {
         for (lineIndex in 0..boxHeight - 1) {
             if (lineIndex > 0)
                 text.append("\n")
-            text.append(" ".repeat(config.padding.second))
+            text.append(" ".repeat(config.padding.horizontal))
             for (b in 0..boxCount - 1) {
                 val i = b * boxHeight + lineIndex
                 val item = items.getOrNull(i)
@@ -187,10 +187,10 @@ object PopupLayout {
                 )
                 text.append(" ".repeat((boxWidth - description.length - nonDescriptionLength).coerceAtLeast(0)))
             }
-            text.append(" ".repeat(config.padding.second))
+            text.append(" ".repeat(config.padding.horizontal))
         }
 
-        repeat(config.padding.first) {
+        repeat(config.padding.vertical) {
             text.append("\n")
         }
         return TextWithHighlights(text.toString(), highlights)

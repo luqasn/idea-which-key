@@ -10,8 +10,12 @@ import eu.theblob42.idea.whichkey.model.Mapping
 import java.awt.*
 import javax.swing.*
 import com.intellij.openapi.editor.colors.TextAttributesKey
+import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.ui.popup.*
 import com.intellij.util.ui.UIUtil
+import com.maddyhome.idea.vim.vimscript.model.datatypes.VimDataType
+import com.maddyhome.idea.vim.vimscript.model.datatypes.VimInt
 import com.maddyhome.idea.vim.vimscript.model.datatypes.VimString
 import eu.theblob42.idea.whichkey.model.Mappings
 import eu.theblob42.idea.whichkey.provider.PopupProvider
@@ -33,6 +37,18 @@ val WHICHKEY_MAPPING_DESCRIPTION_GROUP = TextAttributesKey.createTextAttributesK
     DefaultLanguageHighlighterColors.KEYWORD
 )
 
+fun getConfig(name: String) : VimDataType? = injector.variableService.getGlobalVariableValue("WhichKey_${name}")
+
+fun getConfigInt(name: String) : Int? = when (val size = getConfig(name)) {
+    is VimInt -> size.value
+    else -> null
+}
+
+fun getConfigString(name: String) : String? = when (val size = getConfig(name)) {
+    is VimString -> size.value
+    else -> null
+}
+
 class NewPopupProvider: PopupProvider {
     companion object {
         const val name = "new"
@@ -43,6 +59,31 @@ class NewPopupProvider: PopupProvider {
         currentPopup = null
     }
 
+    private val fontSize: Int? // font size in point
+        get() = getConfigInt("FontSize")
+
+    private val padding: Int
+        get() = getConfigInt("Padding") ?: 1
+
+    private val paddingHorizontal: Int?
+        get() = getConfigInt("PaddingHorizontal")
+
+    private val paddingVertical: Int?
+        get() = getConfigInt("PaddingVertical")
+
+
+    private val margin: Int
+        get() = getConfigInt("Margin") ?: 1
+
+    private val marginHorizontal: Int?
+        get() = getConfigInt("MarginHorizontal")
+
+    private val marginVertical: Int?
+        get() = getConfigInt("MarginVertical")
+
+    private val spacing: Int
+        get() = getConfigInt("Spacing") ?: 3
+
     private val style: Style
         get() = when (val popupType = injector.variableService.getGlobalVariableValue("WhichKey_PopupStyle")) {
         !is VimString -> Style.BOTTOM
@@ -52,9 +93,13 @@ class NewPopupProvider: PopupProvider {
     private fun show(editor: Editor, items: List<Item>) {
         val rowWidth = 40
         val containerWidth = if (style == Style.RIGHT) rowWidth else editor.calculateSizeInCharacters()?.width ?: 50
-
+        val config = WhichKeyConfig(
+            spacing = spacing,
+            padding = DimensionConfig(paddingVertical ?: padding, paddingHorizontal ?: padding),
+            margin = DimensionConfig(marginVertical ?: margin, marginHorizontal ?: margin),
+        )
         val text = PopupLayout.layoutItems(
-            40, containerWidth, WhichKeyConfig(), items
+            40, containerWidth, config, items
         )
         val editorFactory: EditorFactory = EditorFactory.getInstance()
         val document = editorFactory.createDocument(text.text)
@@ -73,6 +118,9 @@ class NewPopupProvider: PopupProvider {
             isCaretRowShown = false
             isShowingSpecialChars = false
         }
+        fontSize?.let {
+            (editor2 as EditorImpl).fontSize = it
+        }
 
         val markupModel = editor2.markupModel
 
@@ -85,10 +133,14 @@ class NewPopupProvider: PopupProvider {
         val contentSize = editor.component.visibleRect.size
         val popupHeight = lines.size * editor.lineHeight
 
+        val charSize = editor.getCharSize()
+
+        val marginBottom = config.margin.vertical * editor.lineHeight
+        val marginRight = config.margin.horizontal * ceil(charSize.width).toInt()
 
         val preferredSize = when(style){
-            Style.BOTTOM -> Dimension(contentSize.width, popupHeight)
-            Style.RIGHT -> Dimension(rowWidth * ceil(editor.getCharSize().width).toInt(), popupHeight)
+            Style.BOTTOM -> Dimension(contentSize.width - 2*marginRight, popupHeight)
+            Style.RIGHT -> Dimension(rowWidth * ceil(charSize.width).toInt(), popupHeight)
         }
 
         val component = object : JComponent() {
@@ -126,11 +178,11 @@ class NewPopupProvider: PopupProvider {
             .createPopup()
         when(style) {
             Style.BOTTOM ->
-                popup.show(RelativePoint(editor.component, Point(0, contentSize.height - popupHeight)))
+                popup.show(RelativePoint(editor.component, Point(marginRight, contentSize.height - popupHeight - marginBottom)))
 
             Style.RIGHT -> {
                 val scrollbarPadding = UIUtil.getScrollBarWidth()
-                popup.show(RelativePoint(editor.component, Point(contentSize.width-preferredSize.width - scrollbarPadding, contentSize.height - popupHeight - scrollbarPadding)))
+                popup.show(RelativePoint(editor.component, Point(contentSize.width-preferredSize.width - scrollbarPadding - marginRight, contentSize.height - popupHeight - scrollbarPadding)))
             }
         }
         currentPopup = popup
