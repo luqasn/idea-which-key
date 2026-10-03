@@ -10,7 +10,6 @@ import com.intellij.openapi.editor.impl.FontInfo
 import com.intellij.openapi.editor.impl.view.FontLayoutService
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.TextAttributes
-import com.intellij.util.ImageLoader
 import java.awt.event.KeyEvent
 import java.awt.font.FontRenderContext
 import javax.swing.KeyStroke
@@ -50,7 +49,9 @@ data class Highlight(
 
 data class TextWithHighlights(val text: String, val highlights: List<Highlight>)
 
-fun Editor.getCharSize(): ImageLoader.Dimension2DDouble {
+internal data class Size2D(val width: Double, val height: Double)
+
+internal fun Editor.getCharSize(): Size2D {
     val baseContext = FontInfo.getFontRenderContext(contentComponent)
     val context = FontRenderContext(
         baseContext.transform,
@@ -62,7 +63,7 @@ fun Editor.getCharSize(): ImageLoader.Dimension2DDouble {
     // For monospaced fonts this shouldn't really matter, but let's stay on the safe side.
     // Otherwise, we may end up with some characters falsely displayed as double-width ones.
     val width = FontLayoutService.getInstance().charWidth2D(fontMetrics, '%'.code)
-    return ImageLoader.Dimension2DDouble(width.toDouble(), lineHeight.toDouble())
+    return Size2D(width.toDouble(), lineHeight.toDouble())
 }
 
 data class EditorSizeInCharacters(val width: Int, val height: Int)
